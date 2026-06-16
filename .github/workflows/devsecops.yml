@@ -73,7 +73,7 @@ jobs:
           scanners: "vuln"
           format: "table"
           output: "trivy-sca-report.txt"
-          ignore-unfixed: true
+          severity: "CRITICAL,HIGH,MEDIUM"
 
   dast:
     name: DAST - OWASP ZAP Scan

@@ -46,18 +46,13 @@ jobs:
           curl -s -X POST "http://localhost:9000/api/projects/create?name=devsecops-pipeline&project=devsecops-pipeline" -u admin:admin
 
           # Create token (ignore if it already exists)
-          TOKEN_RESPONSE=$(curl -s -X POST "http://localhost:9000/api/user_tokens/generate" \
-                -u admin:admin \
-                -H "Content-Type: application/x-www-form-urlencoded" \
-                -d "name=devsecops-token&projectKey=devsecops-pipeline")
+          TOKEN_RESPONSE=$(curl -s -u admin:admin -X POST \
+            "http://localhost:9000/api/user_tokens/generate?name=gh-actions-token" \
+            | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
           echo "token=$TOKEN_RESPONSE" >> "$GITHUB_OUTPUT"
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
-        with:
-          projectKey: devsecops-pipeline
-          projectName: DevSecOps Pipeline
-          hostUrl: http://localhost:9000
         env:
           SONAR_TOKEN: ${{ steps.setup-sonarqube.outputs.token }}
           SONAR_HOST_URL: http://localhost:9000

@@ -1,0 +1,117 @@
+name: DevSecOps pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sast:
+    name: Static Application Security Testing
+    runs-on: ubuntu-latest
+    services:
+      sonarqube:
+        image: sonarqube:community
+        ports:
+          - 9000:9000
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Wait for SonarQube to be ready
+        run: |
+          echo "Wait for SonarQube to be ready..."
+          for i in $(seq 1 60); do
+            # Use 'sonarqube' hostname, not 'localhost'
+            STATUS=$(curl -s http://localhost:9000/api/system/status | grep -o '"status":"[^"]*"' | head -1 || true)
+
+            # Accept UP, DB_MIGRATION_NEEDED, or DB_MIGRATION_RUNNING as "ready"
+            if echo "$STATUS" | grep -qE '"status":"(UP|DB_MIGRATION_NEEDED|DB_MIGRATION_RUNNING)"'; then
+                echo "SonarQube is ready! ($STATUS)"
+                break
+            fi
+
+            echo "Attempt $i/60 - Status: ${STATUS:-UNKNOWN}"
+            sleep 5
+          done
+
+      - name: Create SonarQube project and token
+        id: setup-sonarqube
+        run: |
+          # Create project (ignore if it already exists)
+          curl -s -X POST "http://localhost:9000/api/projects/create?name=devsecops-pipeline&project=devsecops-pipeline" -u admin:admin
+
+          # Create token (ignore if it already exists)
+          TOKEN_RESPONSE=$(curl -s -X POST "http://localhost:9000/api/user_tokens/generate" \
+                -u admin:admin \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "name=devsecops-token&projectKey=devsecops-pipeline")
+          echo "token=$TOKEN_RESPONSE" >> "$GITHUB_OUTPUT"
+
+      - name: SonarQube Scan
+        uses: actions/sonarqube-scan-action@v1
+        with:
+          projectKey: devsecops-pipeline
+          projectName: DevSecOps Pipeline
+          hostUrl: http://localhost:9000
+        env:
+          SONAR_TOKEN: ${{ steps.setup-sonarqube.outputs.token }}
+          SONAR_HOST_URL: http://localhost:9000
+
+  sca:
+    name: "Trivy SCA Scan"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run Trivy SCA Scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: "fs"
+          scan-ref: '.'
+          scanners: "vuln"
+          format: "table"
+          output: "trivy-sca-report.txt"
+          exit-code: 1
+          ignore-unfixed: true
+
+  dast:
+    name: DAST - OWASP ZAP Scan
+    runs-on: ubuntu-latest
+    needs: [sast, sca]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start Flask application
+        run: |
+          python app.py &
+          echo "Waiting for Flask to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:5000 > /dev/null 2>&1; then
+              echo "Flask is running!"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.13.0
+        with:
+          target: "http://localhost:5000"
+          allow_issue_writing: false

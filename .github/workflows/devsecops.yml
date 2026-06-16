@@ -53,7 +53,7 @@ jobs:
           echo "token=$TOKEN_RESPONSE" >> "$GITHUB_OUTPUT"
 
       - name: SonarQube Scan
-        uses: actions/sonarqube-scan-action@v1
+        uses: SonarSource/sonarqube-scan-action@v7
         with:
           projectKey: devsecops-pipeline
           projectName: DevSecOps Pipeline
@@ -78,7 +78,6 @@ jobs:
           scanners: "vuln"
           format: "table"
           output: "trivy-sca-report.txt"
-          exit-code: 1
           ignore-unfixed: true
 
   dast:

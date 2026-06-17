@@ -9,53 +9,19 @@ on:
 jobs:
   sast:
     name: Static Application Security Testing
-    runs-on: ubuntu-latest
-    services:
-      sonarqube:
-        image: sonarqube:community
-        ports:
-          - 9000:9000
-        
+    runs-on: self-hosted
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Wait for SonarQube to be ready
-        run: |
-          echo "Wait for SonarQube to be ready..."
-          for i in $(seq 1 60); do
-            # Use 'sonarqube' hostname, not 'localhost'
-            STATUS=$(curl -s http://localhost:9000/api/system/status | grep -o '"status":"[^"]*"' | head -1 || true)
-
-            # Accept UP, DB_MIGRATION_NEEDED, or DB_MIGRATION_RUNNING as "ready"
-            if echo "$STATUS" | grep -qE '"status":"(UP|DB_MIGRATION_NEEDED|DB_MIGRATION_RUNNING)"'; then
-                echo "SonarQube is ready! ($STATUS)"
-                break
-            fi
-
-            echo "Attempt $i/60 - Status: ${STATUS:-UNKNOWN}"
-            sleep 5
-          done
-
-      - name: Create SonarQube project and token
-        id: setup-sonarqube
-        run: |
-          # Create project (ignore if it already exists)
-          curl -s -X POST "http://localhost:9000/api/projects/create?name=devsecops-pipeline&project=devsecops-pipeline" -u admin:admin
-
-          # Create token (ignore if it already exists)
-          TOKEN_RESPONSE=$(curl -s -u admin:admin -X POST \
-            "http://localhost:9000/api/user_tokens/generate?name=gh-actions-token" \
-            | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-          echo "token=$TOKEN_RESPONSE" >> "$GITHUB_OUTPUT"
-
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:
-          SONAR_TOKEN: ${{ steps.setup-sonarqube.outputs.token }}
-          SONAR_HOST_URL: http://localhost:9000
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   sca:
     name: "Trivy SCA Scan"

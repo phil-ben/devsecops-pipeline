@@ -33,7 +33,6 @@ jobs:
         with:
           name: coverage-report
           path: htmlcov/
-          archive: false
 
   sast:
     name: Static Application Security Testing

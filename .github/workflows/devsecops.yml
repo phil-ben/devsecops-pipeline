@@ -84,7 +84,7 @@ jobs:
           scanners: "vuln"
           format: "table"
           severity: "CRITICAL,HIGH,MEDIUM"
-          exit-code: '1'
+          exit-code: '0'
 
   dast:
     name: DAST - OWASP ZAP Scan

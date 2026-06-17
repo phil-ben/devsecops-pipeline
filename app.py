@@ -86,7 +86,7 @@ def read_file():
         with open(filepath, "r") as f:
             content = f.read()
         return f"<pre>{content}</pre>"
-    except FileNotFoundError:
+    except (FileNotFoundError, IsADirectoryError):
         return "File not found", 404
 
 

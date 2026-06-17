@@ -7,6 +7,32 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+            pip install -r requirements.txt
+            pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: pytest -v --cov=./ --cov-report=xml --cov-report=html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+
   sast:
     name: Static Application Security Testing
     runs-on: self-hosted

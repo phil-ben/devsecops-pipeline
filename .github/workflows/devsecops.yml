@@ -62,6 +62,12 @@ jobs:
       - name: Install unzip
         run: sudo apt update && sudo apt install unzip
 
+      - name: Verify coverage file exists      # debug step
+        run: |
+            ls -la coverage.xml
+            echo "--- First 30 lines ---"
+            head -30 coverage.xml
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
         env:

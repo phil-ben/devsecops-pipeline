@@ -77,14 +77,14 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Run Trivy SCA Scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
           scan-ref: '.'
           scanners: "vuln"
           format: "table"
-          output: "trivy-sca-report.txt"
           severity: "CRITICAL,HIGH,MEDIUM"
+          exit-code: '1'
 
   dast:
     name: DAST - OWASP ZAP Scan

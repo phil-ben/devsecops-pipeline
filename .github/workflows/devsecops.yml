@@ -7,13 +7,16 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Run Unit Tests
-    runs-on: ubuntu-latest
+
+  sast:
+    name: Static Application Security Testing, Unit Tests, and Code Coverage
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,6 +32,15 @@ jobs:
         env:
             PYTHONPATH: ${{ github.workspace }}
         run: pytest -v --cov --cov-config=.coveragerc --cov-report=term-missing --cov-report=xml --cov-report=html tests/
+
+      - name: Install unzip
+        run: sudo apt update && sudo apt install unzip
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: Upload coverage report artifact
         uses: actions/upload-artifact@v7
@@ -48,31 +60,6 @@ jobs:
           file: ./coverage.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-
-  sast:
-    name: Static Application Security Testing
-    runs-on: self-hosted
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Install unzip
-        run: sudo apt update && sudo apt install unzip
-
-      - name: Verify coverage file exists      # debug step
-        run: |
-            ls -la coverage.xml
-            echo "--- First 30 lines ---"
-            head -30 coverage.xml
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v7
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   sca:
     name: "Trivy SCA Scan"

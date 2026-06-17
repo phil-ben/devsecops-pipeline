@@ -26,12 +26,14 @@ jobs:
             pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: pytest -v --cov=./ --cov-report=xml --cov-report=html
+        run: pytest -v --cov --cov-report=xml --cov-report=html
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
+          path: htmlcov/
+          archive: false
 
   sast:
     name: Static Application Security Testing

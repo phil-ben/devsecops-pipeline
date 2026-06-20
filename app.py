@@ -5,7 +5,7 @@ from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
-DATABASE_USER = "Admin"
+DATABASE_USER = "admin"
 DATABASE_PASSWORD = "#SuperSecret123!"
 API_KEY = "sk-1234567890abcdeff"
 

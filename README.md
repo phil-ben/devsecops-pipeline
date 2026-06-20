@@ -1,5 +1,7 @@
 # DevSecOps Pipeline — Security-Integrated CI/CD Demo
 
+<img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
+
 A complete **shift-left DevSecOps pipeline** built with GitHub Actions, demonstrated against a
 **deliberately vulnerable Flask application**. The app ships with intentional, CWE-mapped
 security flaws so the pipeline's SAST, SCA, and DAST stages have real vulnerabilities to detect —

@@ -92,6 +92,25 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           exit-code: '0'
 
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0   # full git history so Gitleaks scans every commit
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        # NOTE: app.py contains INTENTIONAL hardcoded secrets as scan targets.
+        # continue-on-error keeps the pipeline green while still reporting findings
+        # in the job logs. In a real repo, remove this so leaked secrets FAIL the build.
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   dast:
     name: DAST - OWASP ZAP Scan
     runs-on: ubuntu-latest

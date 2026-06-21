@@ -92,6 +92,28 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           exit-code: '0'
 
+  image:
+    name: Trivy container image scan
+    runs-on: ubuntu-latest
+    needs: sca
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t vulnapp:latest .
+
+      - name: Run Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: image
+          scan-ref: 'vulnapp:latest'
+          scanners: "vuln,secret"
+          format: "table"
+          severity: "CRITICAL,HIGH,MEDIUM"
+          exit-code: '0'
+
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
